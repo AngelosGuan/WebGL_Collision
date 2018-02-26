@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>MP4</title>
+<meta charset="utf-8">
+</head>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+
+   attribute vec3 aVertexPosition;
+   attribute vec3 aVertexNormal;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform mat3 uNMatrix;
+    uniform vec3 uLightPosition;
+
+    //light color
+    uniform vec3 uAmbientLightColor;
+    uniform vec3 uDiffuseLightColor;
+    uniform vec3 uSpecularLightColor;
+
+    //sphere color
+    uniform vec3 uAmbientMatColor;
+    uniform vec3 uDiffuseMatColor;
+    uniform vec3 uSpecularMatColor;
+
+    float uShininess = 32.5;
+
+    varying vec4 vColor;
+
+    void main(void) {
+      vec4 vertexPosEye4 = uMVMatrix * vec4(aVertexPosition, 1.0);
+      vec3 vertexPosEye3 = vertexPosEye4.xyz;
+
+      vec3 vecLightSource = normalize(uLightPosition - vertexPosEye3);
+      vec3 normalEye = normalize(uNMatrix*aVertexNormal);
+
+      float diffuseLightWeighting = max(dot(normalEye, vecLightSource), 0.0);
+      vec3 reflectionVec = normalize(reflect(-vecLightSource, normalEye));
+      vec3 viewVectorEye = -normalize(vertexPosEye3);
+      float rv = max(dot(reflectionVec, viewVectorEye), 0.0);
+      float specularLightWeighting = pow(rv, uShininess);
+
+      vColor = vec4((uAmbientLightColor * uAmbientMatColor)
+                  + ((uDiffuseLightColor * uDiffuseMatColor) * diffuseLightWeighting)
+                  + ((uSpecularLightColor * uSpecularMatColor) * specularLightWeighting),1.0);
+
+      gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+    }
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+   precision mediump float;
+
+   varying vec4 vColor;
+
+   void main(void) {
+      gl_FragColor = vColor;
+   }
+</script>
+
+<script src="gl-matrix-min.js"></script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+<script src="spheres.js"></script>
+<script src="simpleModeling.js"></script>
+<body onload="startup();">
+   <p>Click Mouse or press/keep holding SPACE to generate new spheres. (500 limit)</p>
+   <span id="particle_num">Total Spheres: 30</span>
+   <button id="reset_particles">Reset</button>
+   <br>
+  <canvas id="myGLCanvas" width="500" height="500"></canvas>
+</body>
+
+</html>
